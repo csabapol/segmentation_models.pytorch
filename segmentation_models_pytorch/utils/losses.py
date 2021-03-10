@@ -2,7 +2,8 @@ import torch.nn as nn
 
 from . import base
 from . import functional as F
-from .base import Activation
+#from .base import Activation
+from ..base.modules import Activation
 
 
 class JaccardLoss(base.Loss):
