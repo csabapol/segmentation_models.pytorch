@@ -1,4 +1,5 @@
 import torch
+import numpy as np
 
 
 def _take_channels(*xs, ignore_channels=None):
@@ -68,35 +69,34 @@ def weighted_f_score(
 
     return scores
 
-
 def get_channel_scores(pr, gt, beta, eps, class_weights):
     scores = []
     num_channels = gt.shape[1]
     for channel in range(num_channels):
-        pr_ch = pr[:, channel, :, :]
-        gt_ch = gt[:, channel, :, :]
-
+        pr_ch = pr[:,channel,:,:]
+        gt_ch = gt[:,channel,:,:]
+        
         tp = torch.sum(gt_ch * pr_ch)
         fp = torch.sum(pr_ch) - tp
         fn = torch.sum(gt_ch) - tp
 
-        score = ((1 + beta ** 2) * tp + eps) / (
-            (1 + beta ** 2) * tp + beta ** 2 * fn + fp + eps
-        )
-
-        scores.append(score.cpu().detach().numpy())
-
+        score = ((1 + beta ** 2) * tp + eps) \
+            / ((1 + beta ** 2) * tp + beta ** 2 * fn + fp + eps)
+    
+        scores.append(score)
+    
+    # list of tensor to tensor
+    scores = torch.stack(scores)
     avg_loss = average_loss(scores, class_weights)
-    avg_loss = torch.tensor(avg_loss, device=gt.device)
-
+#     avg_loss = torch.tensor(avg_loss, device=gt.device)
+        
     return avg_loss
 
-
 def average_loss(scores, class_weights):
-    # print(scores, class_weights)
-    x = scores * np.array(class_weights)
-    return np.mean(x)
-
+    #print(scores, class_weights)
+#     class_weights = torch.tensor(class_weights, device=scores.device)
+    x = scores * class_weights
+    return torch.mean(x)
 
 def f_score(pr, gt, beta=1, eps=1e-7, threshold=None, ignore_channels=None):
     """Calculate F-score between ground truth and prediction
