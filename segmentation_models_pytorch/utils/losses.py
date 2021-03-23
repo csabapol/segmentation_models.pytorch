@@ -37,11 +37,11 @@ class CategoricalFocalLoss(base.Loss):
         self.eps = eps
         self.alpha = alpha
         self.gamma = gamma
-        # self.activation = Activation(activation)
+        self.activation = Activation(activation)
         self.ignore_channels = ignore_channels
 
     def forward(self, y_pr, y_gt):
-        # y_pr = self.activation(y_pr)
+        y_pr = self.activation(y_pr)
         return F.categorical_focal_loss(
             y_pr,
             y_gt,
