@@ -23,7 +23,7 @@ class JaccardLoss(base.Loss):
         )
 
 
-class CategoricalFocalLoss(base.loss):
+class CategoricalFocalLoss(base.Loss):
     def __init__(
         self,
         eps=1e-7,
