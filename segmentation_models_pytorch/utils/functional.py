@@ -47,6 +47,30 @@ def iou(pr, gt, eps=1e-7, threshold=None, ignore_channels=None):
 jaccard = iou
 
 
+def categorical_focal_loss(
+    pr, gt, eps=1e-7, alpha=0.25, gamma=2.0, threshold=None, ignore_channels=None
+):
+    """Calculate Recall between ground truth and prediction
+    Args:
+        pr (torch.Tensor): A list of predicted elements
+        gt (torch.Tensor):  A list of elements that are to be predicted
+        eps (float): epsilon to avoid zero division
+        threshold: threshold for outputs binarization
+    Returns:
+        float: recall score
+    """
+    pr = _threshold(pr, threshold=threshold)
+    pr, gt = _take_channels(pr, gt, ignore_channels=ignore_channels)
+
+    pr = torch.clamp(pr, min=eps, max=1 - eps)
+
+    loss = -gt * (alpha * torch.pow((1 - pr), gamma) * torch.log(pr))
+
+    #  print("loss",loss.shape)
+
+    return torch.mean(loss)
+
+
 def weighted_f_score(
     pr, gt, class_weights, beta=1, eps=1e-7, threshold=None, ignore_channels=None
 ):
@@ -69,34 +93,38 @@ def weighted_f_score(
 
     return scores
 
+
 def get_channel_scores(pr, gt, beta, eps, class_weights):
     scores = []
     num_channels = gt.shape[1]
     for channel in range(num_channels):
-        pr_ch = pr[:,channel,:,:]
-        gt_ch = gt[:,channel,:,:]
-        
+        pr_ch = pr[:, channel, :, :]
+        gt_ch = gt[:, channel, :, :]
+
         tp = torch.sum(gt_ch * pr_ch)
         fp = torch.sum(pr_ch) - tp
         fn = torch.sum(gt_ch) - tp
 
-        score = ((1 + beta ** 2) * tp + eps) \
-            / ((1 + beta ** 2) * tp + beta ** 2 * fn + fp + eps)
-    
+        score = ((1 + beta ** 2) * tp + eps) / (
+            (1 + beta ** 2) * tp + beta ** 2 * fn + fp + eps
+        )
+
         scores.append(score)
-    
+
     # list of tensor to tensor
     scores = torch.stack(scores)
     avg_loss = average_loss(scores, class_weights)
-#     avg_loss = torch.tensor(avg_loss, device=gt.device)
-        
+    #     avg_loss = torch.tensor(avg_loss, device=gt.device)
+
     return avg_loss
 
+
 def average_loss(scores, class_weights):
-    #print(scores, class_weights)
-#     class_weights = torch.tensor(class_weights, device=scores.device)
+    # print(scores, class_weights)
+    #     class_weights = torch.tensor(class_weights, device=scores.device)
     x = scores * class_weights
     return torch.mean(x)
+
 
 def f_score(pr, gt, beta=1, eps=1e-7, threshold=None, ignore_channels=None):
     """Calculate F-score between ground truth and prediction

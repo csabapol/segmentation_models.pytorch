@@ -23,6 +23,36 @@ class JaccardLoss(base.Loss):
         )
 
 
+class CategoricalFocalLoss(base.loss):
+    def __init__(
+        self,
+        eps=1e-7,
+        alpha=0.25,
+        gamma=2.0,
+        activation=None,
+        ignore_channels=None,
+        **kwargs
+    ):
+        super().__init__(**kwargs)
+        self.eps = eps
+        self.alpha = alpha
+        self.gamma = gamma
+        # self.activation = Activation(activation)
+        self.ignore_channels = ignore_channels
+
+    def forward(self, y_pr, y_gt):
+        # y_pr = self.activation(y_pr)
+        return F.categorical_focal_loss(
+            y_pr,
+            y_gt,
+            eps=self.eps,
+            alpha=self.alpha,
+            gamma=self.gamma,
+            threshold=None,
+            ignore_channels=self.ignore_channels,
+        )
+
+
 class WeightedDiceLoss(base.Loss):
     def __init__(
         self,
