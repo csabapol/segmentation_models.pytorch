@@ -62,11 +62,16 @@ def categorical_focal_loss(
     pr = _threshold(pr, threshold=threshold)
     pr, gt = _take_channels(pr, gt, ignore_channels=ignore_channels)
 
+    # print("pr shape {}".format(pr.shape))
+    # print("pr before {} {}".format(pr.min(), pr.max()))
+
     pr = torch.clamp(pr, min=eps, max=1 - eps)
 
-    loss = -gt * (alpha * torch.pow((1 - pr), gamma) * torch.log(pr))
+    # print("pr after {} {}".format(pr.min(), pr.max()))
 
-    #  print("loss",loss.shape)
+    loss = gt * (alpha * torch.pow((1 - pr), gamma) * torch.log(pr))
+
+    # print("loss", torch.mean(loss))
 
     return torch.mean(loss)
 
